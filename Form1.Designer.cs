@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             btnOpen = new Button();
             comboBoxPorts = new ComboBox();
             textBox1 = new TextBox();
@@ -42,6 +43,18 @@
             chkEnableConfig = new CheckBox();
             comboBoxRecvCheck = new ComboBox();
             comboBoxSendCheck = new ComboBox();
+            groupBoxScale = new GroupBox();
+            label2 = new Label();
+            label1 = new Label();
+            chkRawIsAdc = new CheckBox();
+            txtEngMax = new TextBox();
+            txtEngMin = new TextBox();
+            txtRawMax = new TextBox();
+            txtRawMin = new TextBox();
+            comboBoxSignalType = new ComboBox();
+            chkScale = new CheckBox();
+            toolTip1 = new ToolTip(components);
+            groupBoxScale.SuspendLayout();
             SuspendLayout();
             // 
             // btnOpen
@@ -178,18 +191,19 @@
             // chkEnableConfig
             // 
             chkEnableConfig.AutoSize = true;
-            chkEnableConfig.Location = new Point(1088, 732);
+            chkEnableConfig.Location = new Point(1068, 732);
             chkEnableConfig.Margin = new Padding(2);
             chkEnableConfig.Name = "chkEnableConfig";
-            chkEnableConfig.Size = new Size(91, 23);
+            chkEnableConfig.Size = new Size(121, 23);
             chkEnableConfig.TabIndex = 11;
-            chkEnableConfig.Text = "启用配置";
+            chkEnableConfig.Text = "启用配置文件";
             chkEnableConfig.UseVisualStyleBackColor = true;
             // 
             // comboBoxRecvCheck
             // 
             comboBoxRecvCheck.DropDownStyle = ComboBoxStyle.DropDownList;
             comboBoxRecvCheck.FormattingEnabled = true;
+            comboBoxRecvCheck.Items.AddRange(new object[] { "None", "CRC16", "Sum", "Xor", "CRC8" });
             comboBoxRecvCheck.Location = new Point(776, 508);
             comboBoxRecvCheck.Margin = new Padding(1);
             comboBoxRecvCheck.Name = "comboBoxRecvCheck";
@@ -200,17 +214,116 @@
             // 
             comboBoxSendCheck.DropDownStyle = ComboBoxStyle.DropDownList;
             comboBoxSendCheck.FormattingEnabled = true;
-            comboBoxSendCheck.Location = new Point(776, 95);
+            comboBoxSendCheck.Items.AddRange(new object[] { "None", "CRC16", "Sum", "Xor", "CRC8" });
+            comboBoxSendCheck.Location = new Point(776, 117);
             comboBoxSendCheck.Margin = new Padding(1);
             comboBoxSendCheck.Name = "comboBoxSendCheck";
             comboBoxSendCheck.Size = new Size(123, 27);
             comboBoxSendCheck.TabIndex = 13;
+            // 
+            // groupBoxScale
+            // 
+            groupBoxScale.Controls.Add(label2);
+            groupBoxScale.Controls.Add(label1);
+            groupBoxScale.Controls.Add(chkRawIsAdc);
+            groupBoxScale.Controls.Add(txtEngMax);
+            groupBoxScale.Controls.Add(txtEngMin);
+            groupBoxScale.Controls.Add(txtRawMax);
+            groupBoxScale.Controls.Add(txtRawMin);
+            groupBoxScale.Controls.Add(comboBoxSignalType);
+            groupBoxScale.Controls.Add(chkScale);
+            groupBoxScale.Location = new Point(778, 274);
+            groupBoxScale.Name = "groupBoxScale";
+            groupBoxScale.Size = new Size(354, 172);
+            groupBoxScale.TabIndex = 14;
+            groupBoxScale.TabStop = false;
+            groupBoxScale.Text = "工程量转换";
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(222, 117);
+            label2.Name = "label2";
+            label2.Size = new Size(54, 19);
+            label2.TabIndex = 8;
+            label2.Text = "物理值";
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(9, 117);
+            label1.Name = "label1";
+            label1.Size = new Size(54, 19);
+            label1.TabIndex = 7;
+            label1.Text = "原始值";
+            // 
+            // chkRawIsAdc
+            // 
+            chkRawIsAdc.AutoSize = true;
+            chkRawIsAdc.Location = new Point(0, 55);
+            chkRawIsAdc.Name = "chkRawIsAdc";
+            chkRawIsAdc.Size = new Size(124, 23);
+            chkRawIsAdc.TabIndex = 6;
+            chkRawIsAdc.Text = "原始值为ADC";
+            toolTip1.SetToolTip(chkRawIsAdc, "勾选后，原始值范围请填写程序实际收到的ADC值（如0~65535）；不勾选则填写信号值（如4~20）");
+            chkRawIsAdc.UseVisualStyleBackColor = true;
+            // 
+            // txtEngMax
+            // 
+            txtEngMax.Location = new Point(288, 139);
+            txtEngMax.Name = "txtEngMax";
+            txtEngMax.Size = new Size(60, 27);
+            txtEngMax.TabIndex = 5;
+            txtEngMax.Text = "100";
+            // 
+            // txtEngMin
+            // 
+            txtEngMin.Location = new Point(222, 139);
+            txtEngMin.Name = "txtEngMin";
+            txtEngMin.Size = new Size(60, 27);
+            txtEngMin.TabIndex = 4;
+            txtEngMin.Text = "0";
+            // 
+            // txtRawMax
+            // 
+            txtRawMax.Location = new Point(72, 139);
+            txtRawMax.Name = "txtRawMax";
+            txtRawMax.Size = new Size(60, 27);
+            txtRawMax.TabIndex = 3;
+            txtRawMax.Text = "20";
+            // 
+            // txtRawMin
+            // 
+            txtRawMin.Location = new Point(6, 139);
+            txtRawMin.Name = "txtRawMin";
+            txtRawMin.Size = new Size(60, 27);
+            txtRawMin.TabIndex = 2;
+            txtRawMin.Text = "4";
+            // 
+            // comboBoxSignalType
+            // 
+            comboBoxSignalType.FormattingEnabled = true;
+            comboBoxSignalType.Location = new Point(198, 22);
+            comboBoxSignalType.Name = "comboBoxSignalType";
+            comboBoxSignalType.Size = new Size(150, 27);
+            comboBoxSignalType.TabIndex = 1;
+            // 
+            // chkScale
+            // 
+            chkScale.AutoSize = true;
+            chkScale.Location = new Point(2, 26);
+            chkScale.Name = "chkScale";
+            chkScale.Size = new Size(61, 23);
+            chkScale.TabIndex = 0;
+            chkScale.Text = "启用";
+            chkScale.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 19F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1182, 753);
+            Controls.Add(groupBoxScale);
             Controls.Add(comboBoxSendCheck);
             Controls.Add(comboBoxRecvCheck);
             Controls.Add(chkEnableConfig);
@@ -228,8 +341,10 @@
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             Name = "Form1";
-            Text = "串口工具    by52赫兹";
+            Text = "串口工具 by52赫兹";
             FormClosed += Form1_FormClosed;
+            groupBoxScale.ResumeLayout(false);
+            groupBoxScale.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -250,5 +365,16 @@
         private CheckBox chkEnableConfig;
         private ComboBox comboBoxRecvCheck;
         private ComboBox comboBoxSendCheck;
+        private GroupBox groupBoxScale;
+        private ComboBox comboBoxSignalType;
+        private CheckBox chkScale;
+        private TextBox txtEngMax;
+        private TextBox txtEngMin;
+        private TextBox txtRawMax;
+        private TextBox txtRawMin;
+        private CheckBox chkRawIsAdc;
+        private ToolTip toolTip1;
+        private Label label2;
+        private Label label1;
     }
 }

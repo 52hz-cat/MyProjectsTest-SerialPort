@@ -5,8 +5,7 @@ namespace MyProjectsTest
     public partial class Form1 : Form
     {
         private AppSettings _settings;
-
-        // 用 SerialPortHelper 替代原来的 SerialPort
+        private bool _loadingConfig = false;
         private SerialPortHelper _serial = new();
 
         public Form1()
@@ -16,8 +15,12 @@ namespace MyProjectsTest
             Logger.CheckAndRotate();
             // 订阅数据到达事件 会自动调用OnSerialDataReceived
             _serial.DataReceived += OnSerialDataReceived;
-            // 自动扫描电脑上所有可用串口，填充到下拉框
-            String[] ports = System.IO.Ports.SerialPort.GetPortNames();
+            //信号类型联动
+            comboBoxSignalType.SelectedIndexChanged += ComboBoxSignalType_Changed;
+            chkRawIsAdc.CheckedChanged += ChkRawIsAdc_Changed;
+
+            // 自动扫描可用串口并填充到下拉框
+            string[] ports = System.IO.Ports.SerialPort.GetPortNames();
             comboBoxPorts.Items.Clear();
             comboBoxPorts.Items.AddRange(ports);
             if (ports.Length > 0)
@@ -26,12 +29,16 @@ namespace MyProjectsTest
             }
             //编码默认选择
             comboBoxEncoding.SelectedIndex = 0;
+
+
+
             //从config.json读取
             _settings = ConfigHelper.Load();
             //判断是否启用配置文件
             if (_settings.EnableConfig)
             {
-                // 【启用配置】恢复上次的状态
+                // 【启用配置】恢复上次的状态 恢复标识符
+                _loadingConfig = true;
                 // 端口：只有下拉框里存在这个端口，才选中它
                 if (comboBoxPorts.Items.Contains(_settings.PortName))
                 {
@@ -48,6 +55,17 @@ namespace MyProjectsTest
                 chkHexDisplay.Checked = _settings.HexDisplay;
                 comboBoxSendCheck.SelectedItem = _settings.SendCheck;
                 comboBoxRecvCheck.SelectedItem = _settings.RecvCheck;
+                // 工程量转换
+                chkScale.Checked = _settings.ScaleEnable;
+                comboBoxSignalType.SelectedItem = _settings.SignalType;
+                txtRawMin.Text = _settings.RawMin;
+                txtRawMax.Text = _settings.RawMax;
+                txtEngMin.Text = _settings.EngMin;
+                txtEngMax.Text = _settings.EngMax;
+                chkRawIsAdc.Checked = _settings.RawIsAdc;
+                //恢复结束 允许联动
+                _loadingConfig = false;
+
             }
             else
             {
@@ -55,19 +73,58 @@ namespace MyProjectsTest
                 if (comboBoxPorts.Items.Count > 0)
                 {
                     comboBoxPorts.SelectedIndex = 0;
-                    comboBoxEncoding.SelectedIndex = 0;
-                    comboBoxSendCheck.SelectedIndex = 0;
-                    comboBoxRecvCheck.SelectedIndex = 0;
                 }
+                comboBoxEncoding.SelectedIndex = 0;
+                comboBoxSendCheck.SelectedIndex = 0;
+                comboBoxRecvCheck.SelectedIndex = 0;
             }
-            //同步"启用配置"复选框的状态
+            //同步"启用配置文件"
             chkEnableConfig.Checked = _settings.EnableConfig;
-            // 用户手动勾选/取消时，更新到配置对象（关闭时会保存）
+            // 手动勾选/取消时，更新到配置对象（关闭时会保存）
             chkEnableConfig.CheckedChanged += (s, e) =>
             {
                 _settings.EnableConfig = chkEnableConfig.Checked;
             };
+
         }
+
+        //改变时触发
+        private void ComboBoxSignalType_Changed(object sender, EventArgs e)
+        {
+            // 恢复配置期间不联动
+            if (_loadingConfig) return;
+            RefreshRawDefaults();
+        }
+
+        private void ChkRawIsAdc_Changed(object sender, EventArgs e)
+        {
+            if (_loadingConfig) return;
+            RefreshRawDefaults();
+        }
+
+        // 根据信号类型 + 是否ADC，刷新原始上下限的默认值
+        private void RefreshRawDefaults()
+        {
+            bool isAdc = chkRawIsAdc.Checked;
+
+            switch (comboBoxSignalType.Text)
+            {
+                case "电流 (4-20mA)":
+                    txtRawMin.Text = isAdc ? "0" : "4";
+                    txtRawMax.Text = isAdc ? "65535" : "20";
+                    break;
+
+                case "电压 (0-10V)":
+                    txtRawMin.Text = "0";
+                    txtRawMax.Text = isAdc ? "65535" : "10";
+                    break;
+
+                case "自定义":
+                    // 不动，让用户自己填
+                    break;
+            }
+        }
+
 
         // 串口收到数据时触发，只负责显示
         private void OnSerialDataReceived(byte[] data)
@@ -107,6 +164,37 @@ namespace MyProjectsTest
                     else
                     {
                         receivedData += "[数据太短无法校验]";
+                    }
+                }
+                // 工程量转换
+                if (chkScale.Checked) {
+                    try
+                    {
+                        double rawMin= double.Parse(txtRawMin.Text);
+                        double rawMax = double.Parse(txtRawMax.Text);
+                        double engMin = double.Parse(txtEngMin.Text);
+                        double engMax = double.Parse(txtEngMax.Text);
+                        int dataStart = 3;
+                        int dataEnd = data.Length-2;
+                        if (dataEnd > dataStart)
+                        {
+                            for (int i = dataStart; i+1 <dataEnd; i+=2)
+                            {
+                                ushort raw = (ushort)((data[i] << 8) | (data[i + 1]));
+                                double eng = ScaleHelper.Convert(
+                                    raw: raw,
+                                    rawMin: rawMin,
+                                    rawMax: rawMax,
+                                    engMin: engMin,
+                                    engMax: engMax);
+                                receivedData += $"\r\n    第{(i - dataStart) / 2 + 1}路: {raw} → {eng:F2}";
+                            }
+                        }
+
+                    }
+                    catch
+                    {
+                        receivedData += "\r\n[工程量错误]";
                     }
                 }
             }
@@ -215,6 +303,7 @@ namespace MyProjectsTest
             textBox1.Clear();
         }
 
+
         // 十六进制字符串转字节数组
         private byte[] HexStringToBytes(string hex)
         {
@@ -243,6 +332,14 @@ namespace MyProjectsTest
             _settings.HexSend = chkHexSend.Checked;
             _settings.SendCheck = comboBoxSendCheck.Text;
             _settings.RecvCheck = comboBoxRecvCheck.Text;
+            //工程转换数据
+            _settings.RawIsAdc = chkRawIsAdc.Checked;
+            _settings.ScaleEnable = chkScale.Checked;
+            _settings.SignalType = comboBoxSignalType.Text;
+            _settings.RawMin = txtRawMin.Text;
+            _settings.RawMax = txtRawMax.Text;
+            _settings.EngMin = txtEngMin.Text;
+            _settings.EngMax = txtEngMax.Text;
             //保存到config.json
             ConfigHelper.Save(_settings);
             Logger.Write("程序关闭");

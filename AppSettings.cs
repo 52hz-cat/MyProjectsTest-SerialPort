@@ -33,5 +33,14 @@ namespace MyProjectsTest
         public string RecvCheck { get; set; } = "None";
 
         public string SendCheck { get; set; } = "None";
+        //上次adc选择
+        public bool RawIsAdc { get; set; } = false;
+        // 工程量转换
+        public bool ScaleEnable { get; set; } = false;
+        public string SignalType { get; set; } = "电流 (4-20mA)";
+        public string RawMin { get; set; } = "4";
+        public string RawMax { get; set; } = "20";
+        public string EngMin { get; set; } = "0";
+        public string EngMax { get; set; } = "100";
     }
 }
