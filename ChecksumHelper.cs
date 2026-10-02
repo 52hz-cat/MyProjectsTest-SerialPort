@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MyProjectsTest
+﻿namespace MyProjectsTest
 {
     // 各种校验算法工具
     // 支持：无校验、CRC16、校验和、异或、CRC8

@@ -38,10 +38,13 @@ namespace MyProjectsTest
         /// <summary>
         /// 打开串口
         /// </summary>
-        public void Open(string portName, int baudRate)
+        public void Open(string portName, int baudRate, int dataBits, StopBits stopBits, Parity parity)
         {
             _port.PortName = portName;
             _port.BaudRate = baudRate;
+            _port.DataBits = dataBits;
+            _port.StopBits = stopBits;
+            _port.Parity = parity;
 
             // DTR 和 RTS 是串口的两个控制信号，部分 USB 转串口设备必须置 true 才能正常收发
             _port.DtrEnable = true;

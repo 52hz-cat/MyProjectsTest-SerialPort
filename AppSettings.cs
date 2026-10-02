@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MyProjectsTest
+﻿namespace MyProjectsTest
 {
     /// <summary>
     /// 程序配置类
@@ -18,7 +14,11 @@ namespace MyProjectsTest
         public string PortName { get; set; } = "COM1";
 
         //上次选择的波特率
-        public int BaudRate { get; set; } = 9600;
+        public string BaudRate { get; set; } = "9600";
+
+        public string DataBits { get; set; } = "8";
+        public string StopBits { get; set; } = "1";
+        public string Parity { get; set; } = "None";
 
         //上次选择的编码
         public string Encoding { get; set; } = "GBK";
@@ -33,10 +33,10 @@ namespace MyProjectsTest
         public string RecvCheck { get; set; } = "None";
 
         public string SendCheck { get; set; } = "None";
-        //上次adc选择
-        public bool RawIsAdc { get; set; } = false;
+
         // 工程量转换
         public bool ScaleEnable { get; set; } = false;
+
         public string SignalType { get; set; } = "电流 (4-20mA)";
         public string RawMin { get; set; } = "4";
         public string RawMax { get; set; } = "20";

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MyProjectsTest
+﻿namespace MyProjectsTest
 {
     // 通用工程量线性换算
     public static class ScaleHelper
@@ -13,7 +9,7 @@ namespace MyProjectsTest
             // 防止除零
             if (Math.Abs(rawMax - rawMin) < double.Epsilon)
                 return engMin;
-            return ((raw - rawMin) / (rawMax - rawMin) * (engMax - engMin)+engMin);
+            return ((raw - rawMin) / (rawMax - rawMin) * (engMax - engMin) + engMin);
         }
     }
 }
