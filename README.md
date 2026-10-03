@@ -1,2 +1,2 @@
 # MyProjectsTest
-is a Serialport test.
+is a SerialPort test.
