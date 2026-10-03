@@ -60,6 +60,8 @@
             comboBoxBaudRate = new ComboBox();
             timer1 = new System.Windows.Forms.Timer(components);
             chkTimerSend = new CheckBox();
+            txtTimerInterval = new TextBox();
+            label4 = new Label();
             groupBoxScale.SuspendLayout();
             SuspendLayout();
             // 
@@ -102,7 +104,7 @@
             // btnSend
             // 
             btnSend.Anchor = AnchorStyles.None;
-            btnSend.Location = new Point(776, 450);
+            btnSend.Location = new Point(773, 450);
             btnSend.Margin = new Padding(1);
             btnSend.Name = "btnSend";
             btnSend.Size = new Size(94, 29);
@@ -140,7 +142,7 @@
             comboBoxEncoding.Anchor = AnchorStyles.None;
             comboBoxEncoding.DropDownStyle = ComboBoxStyle.DropDownList;
             comboBoxEncoding.FormattingEnabled = true;
-            comboBoxEncoding.Location = new Point(776, 66);
+            comboBoxEncoding.Location = new Point(773, 66);
             comboBoxEncoding.Margin = new Padding(1);
             comboBoxEncoding.Name = "comboBoxEncoding";
             comboBoxEncoding.Size = new Size(123, 27);
@@ -150,7 +152,7 @@
             // 
             chkHexDisplay.Anchor = AnchorStyles.None;
             chkHexDisplay.AutoSize = true;
-            chkHexDisplay.Location = new Point(776, 41);
+            chkHexDisplay.Location = new Point(773, 41);
             chkHexDisplay.Margin = new Padding(1);
             chkHexDisplay.Name = "chkHexDisplay";
             chkHexDisplay.Size = new Size(109, 23);
@@ -162,7 +164,7 @@
             // 
             chkHexSend.Anchor = AnchorStyles.None;
             chkHexSend.AutoSize = true;
-            chkHexSend.Location = new Point(776, 483);
+            chkHexSend.Location = new Point(773, 483);
             chkHexSend.Margin = new Padding(1);
             chkHexSend.Name = "chkHexSend";
             chkHexSend.Size = new Size(109, 23);
@@ -209,7 +211,7 @@
             // 
             comboBoxRecvCheck.DropDownStyle = ComboBoxStyle.DropDownList;
             comboBoxRecvCheck.FormattingEnabled = true;
-            comboBoxRecvCheck.Location = new Point(776, 508);
+            comboBoxRecvCheck.Location = new Point(773, 95);
             comboBoxRecvCheck.Margin = new Padding(1);
             comboBoxRecvCheck.Name = "comboBoxRecvCheck";
             comboBoxRecvCheck.Size = new Size(123, 27);
@@ -219,7 +221,7 @@
             // 
             comboBoxSendCheck.DropDownStyle = ComboBoxStyle.DropDownList;
             comboBoxSendCheck.FormattingEnabled = true;
-            comboBoxSendCheck.Location = new Point(776, 117);
+            comboBoxSendCheck.Location = new Point(773, 508);
             comboBoxSendCheck.Margin = new Padding(1);
             comboBoxSendCheck.Name = "comboBoxSendCheck";
             comboBoxSendCheck.Size = new Size(123, 27);
@@ -236,7 +238,7 @@
             groupBoxScale.Controls.Add(txtRawMin);
             groupBoxScale.Controls.Add(comboBoxSignalType);
             groupBoxScale.Controls.Add(chkScale);
-            groupBoxScale.Location = new Point(778, 274);
+            groupBoxScale.Location = new Point(775, 274);
             groupBoxScale.Margin = new Padding(1);
             groupBoxScale.Name = "groupBoxScale";
             groupBoxScale.Size = new Size(354, 172);
@@ -370,7 +372,7 @@
             // chkTimerSend
             // 
             chkTimerSend.AutoSize = true;
-            chkTimerSend.Location = new Point(776, 720);
+            chkTimerSend.Location = new Point(773, 689);
             chkTimerSend.Margin = new Padding(1);
             chkTimerSend.Name = "chkTimerSend";
             chkTimerSend.Size = new Size(91, 23);
@@ -378,11 +380,31 @@
             chkTimerSend.Text = "定时发送";
             chkTimerSend.UseVisualStyleBackColor = true;
             // 
+            // txtTimerInterval
+            // 
+            txtTimerInterval.Location = new Point(773, 714);
+            txtTimerInterval.Margin = new Padding(1);
+            txtTimerInterval.Name = "txtTimerInterval";
+            txtTimerInterval.Size = new Size(125, 27);
+            txtTimerInterval.TabIndex = 20;
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new Point(899, 722);
+            label4.Margin = new Padding(0, 0, 3, 0);
+            label4.Name = "label4";
+            label4.Size = new Size(105, 19);
+            label4.TabIndex = 21;
+            label4.Text = "ms 最小10ms";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 19F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1182, 753);
+            Controls.Add(label4);
+            Controls.Add(txtTimerInterval);
             Controls.Add(chkTimerSend);
             Controls.Add(comboBoxBaudRate);
             Controls.Add(comboBoxParity);
@@ -447,5 +469,7 @@
         private ComboBox comboBoxBaudRate;
         private System.Windows.Forms.Timer timer1;
         private CheckBox chkTimerSend;
+        private TextBox txtTimerInterval;
+        private Label label4;
     }
 }

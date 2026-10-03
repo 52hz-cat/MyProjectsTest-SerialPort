@@ -5,19 +5,43 @@ namespace MyProjectsTest
 {
     public partial class Form1 : Form
     {
+        //定时发送的最小间隔（毫秒）
+        private const int MinTimerInterval = 10;
+
+        //读取文件标识
         private bool _loadingConfig = false;
+
         private SerialPortHelper _serial = new();
+
+        //配置文件
         private AppSettings _settings;
+
+        //定时发送器
+        private HighPrecisionTimer _timerSend;
+
+        //定时发送用的字节缓存（在 UI 线程更新，在后台线程读取）
+        private byte[] _timerSendBytes;
 
         public Form1()
         {
             InitializeComponent();
-            // 程序启动时，检查日志是否超过 5MB
+            //程序启动时，检查日志是否超过 5MB
             Logger.CheckAndRotate();
-            // 订阅数据到达事件 会自动调用OnSerialDataReceived
+            //订阅数据到达事件 会自动调用OnSerialDataReceived
             _serial.DataReceived += OnSerialDataReceived;
             //信号类型联动
             comboBoxSignalType.SelectedIndexChanged += ComboBoxSignalType_Changed;
+            // 定时发送复选框变化
+            chkTimerSend.CheckedChanged += ChkTimerSend_CheckedChanged;
+
+            // 发送框内容变化时更新缓存
+            textBox2.TextChanged += TextBox2_TextChanged;
+
+            // 十六进制发送勾选变化时也更新缓存
+            chkHexSend.CheckedChanged += ChkHexSend_CheckedChanged;
+
+            // 发送校验方式变化时也更新缓存
+            comboBoxSendCheck.SelectedIndexChanged += ComboBoxSendCheck_SelectedIndexChanged;
 
             // 自动扫描可用串口并填充到下拉框
             string[] ports = System.IO.Ports.SerialPort.GetPortNames();
@@ -273,8 +297,35 @@ namespace MyProjectsTest
                 _serial.Send(textBox2.Text);
                 Logger.Write($"发送{textBox2.Text}");
             }
-
+            // 记下当前缓存，清空后恢复
+            byte[] savedCache = _timerSendBytes;
             textBox2.Clear();
+            _timerSendBytes = savedCache;
+        }
+
+        // 十六进制发送勾选变化时更新缓存
+        private void ChkHexSend_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateTimerSendCache();
+        }
+
+        // 定时发送复选框变化
+        private void ChkTimerSend_CheckedChanged(object sender, EventArgs e)
+        {
+            if (chkTimerSend.Checked)
+            {
+                StartTimerSend();
+            }
+            else
+            {
+                StopTimerSend();
+            }
+        }
+
+        // 发送校验方式变化时更新缓存
+        private void ComboBoxSendCheck_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateTimerSendCache();
         }
 
         //改变时触发
@@ -293,6 +344,9 @@ namespace MyProjectsTest
         {
             // 关闭串口
             _serial.Close();
+            // 先停定时发送
+            _timerSend?.Dispose();
+            _timerSend = null;
             // 把当前界面状态写进配置对象
             _settings.PortName = comboBoxPorts.Text;
             _settings.BaudRate = comboBoxBaudRate.Text;
@@ -330,6 +384,26 @@ namespace MyProjectsTest
                 bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
             }
             return bytes;
+        }
+
+        // ================================
+        // 【参考】采集模块转换
+        // 出厂默认：249采样电阻
+        // 可变小数点表示法:最高位数字表示小数点位数 例:值为31000 转浮点1000*0.001=1V
+        // 模块：电压(V) / 249Ω = 电流(A)，电流×1000 = 电流(mA)
+
+        // 485报文测试用＋crc16
+        // 轮询读输入寄存器：01 04 00 00 00 02
+        // 设置主动上传数据：01 06 00 31 00 1E 0x001E = 30，30 * 0.01 = 0.3s， 300ms 上传一次
+
+        private double ConvertToCurrentmA(ushort raw)
+        {
+            // 电压V
+            // raw%10000=后4位:数值
+            // raw/10000=最高位:小数位数
+            double voltage = (raw % 10000) * Math.Pow(10, -(raw / 10000));
+            // 电压 / 249 × 1000 = 电流(mA)
+            return voltage / 249.0 * 1000.0;
         }
 
         // 串口收到数据时触发，只负责显示
@@ -386,6 +460,7 @@ namespace MyProjectsTest
                         {
                             double rawMin = double.Parse(txtRawMin.Text);
                             double rawMax = double.Parse(txtRawMax.Text);
+                            //物理值
                             double engMin = double.Parse(txtEngMin.Text);
                             double engMax = double.Parse(txtEngMax.Text);
                             int dataStart = 3;
@@ -394,14 +469,16 @@ namespace MyProjectsTest
                             {
                                 for (int i = dataStart; i + 1 < dataEnd; i += 2)
                                 {
+                                    // 大端拼16位，得到寄存器原始值
                                     ushort raw = (ushort)((data[i] << 8) | (data[i + 1]));
                                     double eng = ScaleHelper.Convert(
-                                        raw: raw,
+                                        raw: ConvertToCurrentmA(raw),//currentmA
                                         rawMin: rawMin,
                                         rawMax: rawMax,
                                         engMin: engMin,
                                         engMax: engMax);
-                                    receivedData += $"\r\n    第{(i - dataStart) / 2 + 1}路: {raw} → {eng:F2}";
+                                    receivedData += $"\r\n    第{(i - dataStart) / 2 + 1}路: {raw} → {eng:F3}";
+                                    receivedData += $"\r\n    mA={ConvertToCurrentmA(raw):F3}mA";
                                 }
                             }
                         }
@@ -431,6 +508,110 @@ namespace MyProjectsTest
                 textBox1.ScrollToCaret();
             }));
         }
+
+        // 定时执行的回调（在后台线程运行）
+        private void SendTimerData()
+        {
+            try
+            {
+                // 串口没打开就跳过
+                if (!_serial.IsOpen) return;
+                // 读缓存字段（UI 线程已更新过，这里安全）
+                byte[] data = _timerSendBytes;
+                if (data != null && data.Length > 0)
+                {
+                    _serial.Send(data);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"定时发送出错:{ex.Message}");
+            }
+        }
+
+        // 启动定时发送
+        private void StartTimerSend()
+        {
+            // 串口没打开不给启动
+            if (!_serial.IsOpen)
+            {
+                MessageBox.Show("请先打开串口");
+                chkTimerSend.Checked = false;
+                return;
+            }
+            // 解析间隔
+            int interval;
+            if (!int.TryParse(txtTimerInterval.Text, out interval) || interval < MinTimerInterval)
+            {
+                MessageBox.Show($"间隔必须大于等于{MinTimerInterval}");
+                chkTimerSend.Checked = false;
+                return;
+            }
+            // 更新缓存（防止启动后发送框内容为空）
+            UpdateTimerSendCache();
+            // 缓存为空不给启动
+            if (_timerSendBytes == null || _timerSendBytes.Length == 0)
+            {
+                MessageBox.Show($"发送内容无效,请检查");
+                chkTimerSend.Checked = false;
+                return;
+            }
+            // 释放旧的
+            _timerSend?.Dispose();
+            // 创建新的定时器
+            _timerSend = new HighPrecisionTimer(TimeSpan.FromMilliseconds(interval), SendTimerData);
+            _timerSend.Start();
+            Logger.Write($"定时发送启动，间隔 {interval}ms");
+        }
+
+        // 停止定时发送
+        private void StopTimerSend()
+        {
+            _timerSend?.Stop();
+            _timerSend?.Dispose();
+            _timerSend = null;
+            Logger.Write("定时发送停止");
+        }
+
+        // 发送框内容变化时更新缓存
+        private void TextBox2_TextChanged(object sender, EventArgs e)
+        {
+            UpdateTimerSendCache();
+        }
+
+        // 根据当前输入框和设置，更新定时发送缓存
+        private void UpdateTimerSendCache()
+        {
+            try
+            {
+                // 十六进制模式
+                if (chkHexSend.Checked)
+                {
+                    byte[] data = HexStringToBytes(textBox2.Text);
+                    byte[] check = ChecksumHelper.Compute(comboBoxSendCheck.Text, data);
+
+                    // 拼成"数据+校验"
+                    byte[] full = new byte[data.Length + check.Length];
+                    Array.Copy(data, 0, full, 0, data.Length);
+                    Array.Copy(check, 0, full, data.Length, check.Length);
+
+                    _timerSendBytes = full;
+                }
+                // 文本模式
+                else
+                {
+                    Encoding encoding = Encoding.GetEncoding(comboBoxEncoding.Text);
+                    _timerSendBytes = encoding.GetBytes(textBox2.Text);
+                }
+            }
+            catch
+            {
+                // 解析失败就置空，定时启动时会检查
+                _timerSendBytes = null;
+            }
+        }
+
+        #region 信号类型
 
         // 根据信号类型 + 是否ADC，刷新原始上下限的默认值
         private void RefreshRawDefaults()
@@ -473,5 +654,6 @@ namespace MyProjectsTest
             }
         }
 
+        #endregion 信号类型
     }
 }
