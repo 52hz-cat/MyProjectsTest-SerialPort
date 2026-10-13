@@ -147,15 +147,18 @@ namespace MyProjectsTest
                 chkHexDisplay.Checked = _settings.HexDisplay;
                 comboBoxSendCheck.SelectedItem = _settings.SendCheck;
                 comboBoxRecvCheck.SelectedItem = _settings.RecvCheck;
-                // 工程量转换
+                //工程量转换
                 chkScale.Checked = _settings.ScaleEnable;
                 comboBoxSignalType.SelectedItem = _settings.SignalType;
                 txtRawMin.Text = _settings.RawMin;
                 txtRawMax.Text = _settings.RawMax;
                 txtEngMin.Text = _settings.EngMin;
                 txtEngMax.Text = _settings.EngMax;
+
                 //恢复结束 允许联动
                 _loadingConfig = false;
+                //上次发送框内容
+                textBox2.Text = _settings.LastSendText;
             }
             else
             {
@@ -297,10 +300,6 @@ namespace MyProjectsTest
                 _serial.Send(textBox2.Text);
                 Logger.Write($"发送{textBox2.Text}");
             }
-            // 记下当前缓存，清空后恢复
-            byte[] savedCache = _timerSendBytes;
-            textBox2.Clear();
-            _timerSendBytes = savedCache;
         }
 
         // 十六进制发送勾选变化时更新缓存
@@ -358,6 +357,8 @@ namespace MyProjectsTest
             _settings.HexSend = chkHexSend.Checked;
             _settings.SendCheck = comboBoxSendCheck.Text;
             _settings.RecvCheck = comboBoxRecvCheck.Text;
+            // 保存发送框内容
+            _settings.LastSendText = textBox2.Text;
             //工程转换数据
             _settings.ScaleEnable = chkScale.Checked;
             _settings.SignalType = comboBoxSignalType.Text;

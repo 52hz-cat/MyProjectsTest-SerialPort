@@ -34,6 +34,9 @@
 
         public string SendCheck { get; set; } = "None";
 
+        // 上次发送框内容
+        public string LastSendText { get; set; } = "";
+
         // 工程量转换
         public bool ScaleEnable { get; set; } = false;
 
